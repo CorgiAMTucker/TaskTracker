@@ -2,8 +2,9 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { getDatabaseUrl } from "../lib/databaseUrl";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg({ connectionString: getDatabaseUrl() });
 const prisma = new PrismaClient({ adapter });
 
 const DEFAULT_COLUMNS = ["New", "In Progress", "Blocked", "Done"];
