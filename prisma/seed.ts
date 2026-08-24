@@ -13,7 +13,7 @@ const BOARDS = ["AM Tasks", "Brokering Requests"];
 async function main() {
   const existingUsers = await prisma.user.count();
   if (existingUsers === 0) {
-    const password = randomBytes(9).toString("base64url");
+    const password = process.env.SEED_ADMIN_PASSWORD || randomBytes(9).toString("base64url");
     await prisma.user.create({
       data: {
         name: "Tucker Bean",
@@ -24,7 +24,9 @@ async function main() {
     });
     console.log("\nSeeded admin account:");
     console.log("  email:    tucker@corgi.com");
-    console.log(`  password: ${password}\n`);
+    if (!process.env.SEED_ADMIN_PASSWORD) {
+      console.log(`  password: ${password}\n`);
+    }
   } else {
     console.log("Users already exist, skipping user seed.");
   }
