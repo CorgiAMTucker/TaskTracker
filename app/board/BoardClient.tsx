@@ -72,6 +72,10 @@ export default function BoardClient({
   const [dialogTask, setDialogTask] = useState<TaskDTO | "new" | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [columnError, setColumnError] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [reassignTo, setReassignTo] = useState("");
+  const [reassigning, setReassigning] = useState(false);
 
   const activeBoard = boards.find((b) => b.id === activeBoardId);
 
@@ -105,6 +109,11 @@ export default function BoardClient({
     loadTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, activeBoardId, boards]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [activeBoardId]);
 
   const usersById = useMemo(
     () => Object.fromEntries(users.map((u) => [u.id, u])),
@@ -268,6 +277,50 @@ export default function BoardClient({
     });
   }
 
+  function toggleSelected(taskId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }
+
+  async function handleBulkReassign() {
+    if (selectedIds.size === 0) return;
+    setReassigning(true);
+    const assigneeId = reassignTo || null;
+    const ids = [...selectedIds];
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/tasks/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assigneeId }),
+          })
+        )
+      );
+      setColumns((prev) => {
+        const next: Record<string, TaskDTO[]> = {};
+        const assignee = users.find((u) => u.id === assigneeId) ?? null;
+        for (const [colId, tasks] of Object.entries(prev)) {
+          next[colId] = tasks.map((t) =>
+            selectedIds.has(t.id)
+              ? { ...t, assignee: assignee ? { id: assignee.id, name: assignee.name } : null }
+              : t
+          );
+        }
+        return next;
+      });
+      setSelectedIds(new Set());
+      setSelectMode(false);
+      setReassignTo("");
+    } finally {
+      setReassigning(false);
+    }
+  }
+
   async function handleAddColumn() {
     const name = window.prompt("New column name:");
     if (!name) return;
@@ -342,6 +395,19 @@ export default function BoardClient({
             </button>
           )}
           <button
+            onClick={() => {
+              setSelectMode((v) => !v);
+              setSelectedIds(new Set());
+            }}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium ${
+              selectMode
+                ? "bg-slate-900 text-white"
+                : "border border-slate-300 text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            {selectMode ? "Done selecting" : "Select"}
+          </button>
+          <button
             onClick={() => setDialogTask("new")}
             className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
           >
@@ -349,6 +415,39 @@ export default function BoardClient({
           </button>
         </div>
       </div>
+
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 shadow-lg">
+          <span className="text-sm font-medium text-slate-700">
+            {selectedIds.size} selected
+          </span>
+          <select
+            value={reassignTo}
+            onChange={(e) => setReassignTo(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          >
+            <option value="">Unassigned</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleBulkReassign}
+            disabled={reassigning}
+            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          >
+            {reassigning ? "Reassigning…" : "Reassign"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm font-medium text-slate-500 hover:text-slate-800"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {columnError && (
         <p className="border-b border-red-100 bg-red-50 px-6 py-2 text-sm text-red-600">
@@ -384,6 +483,9 @@ export default function BoardClient({
                     onMoveRight={() => handleMoveColumn(col.id, 1)}
                     isFirst={i === 0}
                     isLast={i === arr.length - 1}
+                    selectMode={selectMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={toggleSelected}
                   />
                 ))}
               {editMode && (
@@ -465,6 +567,9 @@ function Column({
   onMoveRight,
   isFirst,
   isLast,
+  selectMode,
+  selectedIds,
+  onToggleSelect,
 }: {
   column: ColumnDTO;
   tasks: TaskDTO[];
@@ -478,6 +583,9 @@ function Column({
   onMoveRight: () => void;
   isFirst: boolean;
   isLast: boolean;
+  selectMode: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (taskId: string) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: column.id });
   const [renaming, setRenaming] = useState(false);
@@ -561,6 +669,9 @@ function Column({
               assigneeName={task.assignee ? usersById[task.assignee.id]?.name : undefined}
               onDelete={() => onDelete(task.id, column.id)}
               onEdit={() => onEdit(task)}
+              selectMode={selectMode}
+              selected={selectedIds.has(task.id)}
+              onToggleSelect={() => onToggleSelect(task.id)}
             />
           ))}
         </SortableContext>
@@ -574,14 +685,21 @@ function SortableTaskCard({
   assigneeName,
   onDelete,
   onEdit,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: {
   task: TaskDTO;
   assigneeName?: string;
   onDelete: () => void;
   onEdit: () => void;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    disabled: selectMode,
   });
 
   const style = {
@@ -591,8 +709,16 @@ function SortableTaskCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} assigneeName={assigneeName} onDelete={onDelete} onEdit={onEdit} />
+    <div ref={setNodeRef} style={style} {...(selectMode ? {} : { ...attributes, ...listeners })}>
+      <TaskCard
+        task={task}
+        assigneeName={assigneeName}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        selectMode={selectMode}
+        selected={selected}
+        onToggleSelect={onToggleSelect}
+      />
     </div>
   );
 }
@@ -602,29 +728,50 @@ function TaskCard({
   assigneeName,
   onDelete,
   onEdit,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: {
   task: TaskDTO;
   assigneeName?: string;
   onDelete: () => void;
   onEdit: () => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   return (
     <div
-      onClick={onEdit}
-      className="group cursor-pointer rounded-md border border-slate-200 bg-white p-3 shadow-sm"
+      onClick={selectMode ? onToggleSelect : onEdit}
+      className={`group cursor-pointer rounded-md border bg-white p-3 shadow-sm ${
+        selected ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-slate-900">{task.title}</p>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="hidden text-xs text-slate-400 hover:text-red-500 group-hover:block"
-        >
-          ✕
-        </button>
+        <div className="flex items-start gap-2">
+          {selectMode && (
+            <input
+              type="checkbox"
+              checked={!!selected}
+              onChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-0.5 h-4 w-4 flex-shrink-0"
+            />
+          )}
+          <p className="text-sm font-medium text-slate-900">{task.title}</p>
+        </div>
+        {!selectMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="hidden text-xs text-slate-400 hover:text-red-500 group-hover:block"
+          >
+            ✕
+          </button>
+        )}
       </div>
       {task.description && (
         <p className="mt-1 line-clamp-2 text-xs text-slate-500">{task.description}</p>
