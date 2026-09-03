@@ -20,7 +20,7 @@ const inputClass =
   "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500";
 const labelClass = "block text-sm font-medium text-slate-700";
 
-export default function RequestForm({ mode }: { mode: "public" | "internal" }) {
+export default function RequestForm({ requireAllFields }: { requireAllFields: boolean }) {
   const [boards, setBoards] = useState<BoardDTO[]>([]);
   const [requestKind, setRequestKind] = useState<RequestKind>("BROKER_REQUEST");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
@@ -52,7 +52,7 @@ export default function RequestForm({ mode }: { mode: "public" | "internal" }) {
       .then((data) => setBoards(data.boards ?? []));
   }, []);
 
-  const required = mode === "public";
+  const required = requireAllFields;
   const activeBoard = boards.find((b) => b.name === BOARD_NAME_BY_KIND[requestKind]);
   const availableAMs = activeBoard?.availableAMs ?? [];
 
@@ -172,11 +172,6 @@ export default function RequestForm({ mode }: { mode: "public" | "internal" }) {
       className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
     >
       <h1 className="text-xl font-semibold text-slate-900">File a request</h1>
-      {mode === "public" && (
-        <p className="mt-1 text-sm text-slate-500">
-          For anyone outside the team who needs to submit a request to us.
-        </p>
-      )}
 
       <label className={`mt-6 ${labelClass}`}>
         Request Type

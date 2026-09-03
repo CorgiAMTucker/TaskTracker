@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { getSession } from "@/lib/auth";
 
 const ALLOWED_CONTENT_TYPES = new Set([
   "application/pdf",
@@ -14,6 +15,9 @@ const ALLOWED_CONTENT_TYPES = new Set([
 const MAX_SIZE_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
 

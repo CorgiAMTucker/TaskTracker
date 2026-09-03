@@ -159,7 +159,7 @@ export default function AdminClient({
                       >
                         <option value="MEMBER">Member</option>
                         <option value="ADMIN">Admin</option>
-                        <option value="REQUESTER">Requester (submit only)</option>
+                        <option value="REQUESTER">Basic User (requests & notes only)</option>
                       </select>
                     </td>
                     <td className="px-4 py-2">

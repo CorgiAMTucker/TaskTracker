@@ -34,6 +34,7 @@ const baseSchema = z.object({
 
 export async function POST(request: Request) {
   const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const parsed = baseSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -41,10 +42,10 @@ export async function POST(request: Request) {
   }
   const d = parsed.data;
 
-  // External, unauthenticated submitters must supply the full field set for
-  // their request kind. Authenticated team members can submit with nothing
-  // filled in.
-  if (!session) {
+  // Basic Users are the closest thing to the old external submitter, so they
+  // still face the full required-field list. AMs/Admins filing internally
+  // can submit with nothing filled in.
+  if (session.role === "REQUESTER") {
     if (d.requestKind === "BROKER_REQUEST") {
       const required: [unknown, string][] = [
         [d.companyName, "Company Name"],
@@ -127,8 +128,8 @@ export async function POST(request: Request) {
         columnId: firstColumn.id,
         requestKind: d.requestKind,
         taskKind: d.requestKind === "TASK" ? d.taskKind : undefined,
-        source: session ? "INTERNAL" : "EXTERNAL_FORM",
-        createdById: session?.sub,
+        source: "EXTERNAL_FORM",
+        createdById: session.sub,
         assigneeId,
         requesterFirstName: d.contactFirstName,
         requesterLastName: d.contactLastName,

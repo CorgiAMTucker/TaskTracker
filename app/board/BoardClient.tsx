@@ -333,6 +333,7 @@ export default function BoardClient({
   }
 
   const isAdmin = currentUser.role === "ADMIN";
+  const isReadOnly = currentUser.role === "REQUESTER";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -394,25 +395,29 @@ export default function BoardClient({
               {editMode ? "Done editing" : "Edit columns"}
             </button>
           )}
-          <button
-            onClick={() => {
-              setSelectMode((v) => !v);
-              setSelectedIds(new Set());
-            }}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium ${
-              selectMode
-                ? "bg-slate-900 text-white"
-                : "border border-slate-300 text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            {selectMode ? "Done selecting" : "Select"}
-          </button>
-          <button
-            onClick={() => setDialogTask("new")}
-            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            + New task
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => {
+                setSelectMode((v) => !v);
+                setSelectedIds(new Set());
+              }}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium ${
+                selectMode
+                  ? "bg-slate-900 text-white"
+                  : "border border-slate-300 text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {selectMode ? "Done selecting" : "Select"}
+            </button>
+          )}
+          {!isReadOnly && (
+            <button
+              onClick={() => setDialogTask("new")}
+              className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              + New task
+            </button>
+          )}
         </div>
       </div>
 
@@ -486,6 +491,7 @@ export default function BoardClient({
                     selectMode={selectMode}
                     selectedIds={selectedIds}
                     onToggleSelect={toggleSelected}
+                    readOnly={isReadOnly}
                   />
                 ))}
               {editMode && (
@@ -524,6 +530,7 @@ export default function BoardClient({
           columns={activeBoard.columns}
           onSaved={handleTaskSaved}
           onDeleted={handleTaskDeletedLocally}
+          readOnly={isReadOnly}
         />
       )}
     </div>
@@ -570,6 +577,7 @@ function Column({
   selectMode,
   selectedIds,
   onToggleSelect,
+  readOnly,
 }: {
   column: ColumnDTO;
   tasks: TaskDTO[];
@@ -586,6 +594,7 @@ function Column({
   selectMode: boolean;
   selectedIds: Set<string>;
   onToggleSelect: (taskId: string) => void;
+  readOnly: boolean;
 }) {
   const { setNodeRef } = useDroppable({ id: column.id });
   const [renaming, setRenaming] = useState(false);
@@ -672,6 +681,7 @@ function Column({
               selectMode={selectMode}
               selected={selectedIds.has(task.id)}
               onToggleSelect={() => onToggleSelect(task.id)}
+              readOnly={readOnly}
             />
           ))}
         </SortableContext>
@@ -688,6 +698,7 @@ function SortableTaskCard({
   selectMode,
   selected,
   onToggleSelect,
+  readOnly,
 }: {
   task: TaskDTO;
   assigneeName?: string;
@@ -696,10 +707,11 @@ function SortableTaskCard({
   selectMode: boolean;
   selected: boolean;
   onToggleSelect: () => void;
+  readOnly: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
-    disabled: selectMode,
+    disabled: selectMode || readOnly,
   });
 
   const style = {
@@ -709,7 +721,11 @@ function SortableTaskCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...(selectMode ? {} : { ...attributes, ...listeners })}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...(selectMode || readOnly ? {} : { ...attributes, ...listeners })}
+    >
       <TaskCard
         task={task}
         assigneeName={assigneeName}
@@ -718,6 +734,7 @@ function SortableTaskCard({
         selectMode={selectMode}
         selected={selected}
         onToggleSelect={onToggleSelect}
+        readOnly={readOnly}
       />
     </div>
   );
@@ -731,6 +748,7 @@ function TaskCard({
   selectMode,
   selected,
   onToggleSelect,
+  readOnly,
 }: {
   task: TaskDTO;
   assigneeName?: string;
@@ -739,13 +757,14 @@ function TaskCard({
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  readOnly?: boolean;
 }) {
   return (
     <div
       onClick={selectMode ? onToggleSelect : onEdit}
-      className={`group cursor-pointer rounded-md border bg-white p-3 shadow-sm ${
-        selected ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"
-      }`}
+      className={`group rounded-md border bg-white p-3 shadow-sm ${
+        readOnly ? "cursor-default" : "cursor-pointer"
+      } ${selected ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200"}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2">
@@ -760,7 +779,7 @@ function TaskCard({
           )}
           <p className="text-sm font-medium text-slate-900">{task.title}</p>
         </div>
-        {!selectMode && (
+        {!selectMode && !readOnly && (
           <button
             onClick={(e) => {
               e.stopPropagation();

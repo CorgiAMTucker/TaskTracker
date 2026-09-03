@@ -74,13 +74,6 @@ function LoginForm() {
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>
-
-      <p className="mt-6 text-center text-xs text-slate-400">
-        Filing a ticket from outside the team?{" "}
-        <a href="/submit" className="underline hover:text-slate-600">
-          Use the request form
-        </a>
-      </p>
     </form>
   );
 }

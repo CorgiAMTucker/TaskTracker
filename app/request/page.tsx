@@ -9,7 +9,7 @@ export default async function RequestPage() {
     <div className="flex min-h-screen flex-col">
       <TopNav currentUser={{ name: session!.name, role: session!.role }} />
       <div className="flex flex-1 items-center justify-center px-4 py-10">
-        <RequestForm mode="internal" />
+        <RequestForm requireAllFields={session!.role === "REQUESTER"} />
       </div>
     </div>
   );

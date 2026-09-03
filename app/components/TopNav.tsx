@@ -24,18 +24,14 @@ export default function TopNav({
         : "text-slate-600 hover:bg-slate-200"
     }`;
 
-  const isRequester = currentUser.role === "REQUESTER";
-
   return (
     <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
       <div className="flex items-center gap-4">
         <span className="text-sm font-semibold text-slate-900">Team Tracker</span>
         <nav className="flex items-center gap-1">
-          {!isRequester && (
-            <Link href="/board" className={linkClass("/board")}>
-              Board
-            </Link>
-          )}
+          <Link href="/board" className={linkClass("/board")}>
+            Board
+          </Link>
           <Link href="/request" className={linkClass("/request")}>
             New Request
           </Link>
