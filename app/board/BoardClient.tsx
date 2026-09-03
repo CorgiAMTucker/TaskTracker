@@ -59,7 +59,7 @@ export default function BoardClient({
   users,
   initialBoards,
 }: {
-  currentUser: { id: string; name: string; role: "ADMIN" | "MEMBER" };
+  currentUser: { id: string; name: string; role: "ADMIN" | "MEMBER" | "REQUESTER" };
   users: UserDTO[];
   initialBoards: BoardDTO[];
 }) {

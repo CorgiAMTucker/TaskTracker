@@ -18,7 +18,7 @@ export default function AdminClient({
   initialUsers,
   boards,
 }: {
-  currentUser: { id: string; name: string; role: "ADMIN" | "MEMBER" };
+  currentUser: { id: string; name: string; role: "ADMIN" | "MEMBER" | "REQUESTER" };
   initialUsers: UserDTO[];
   boards: BoardSummary[];
 }) {
@@ -159,6 +159,7 @@ export default function AdminClient({
                       >
                         <option value="MEMBER">Member</option>
                         <option value="ADMIN">Admin</option>
+                        <option value="REQUESTER">Requester (submit only)</option>
                       </select>
                     </td>
                     <td className="px-4 py-2">

@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 const SESSION_COOKIE = "session";
 
 const PUBLIC_PATHS = ["/login", "/submit"];
-const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/tickets/external"];
+const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/requests", "/api/upload"];
 
 function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
@@ -43,6 +43,16 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (role === "REQUESTER") {
+    const allowed = pathname === "/request" || pathname === "/api/auth/logout";
+    if (!allowed) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/request", request.url));
+    }
   }
 
   if (pathname.startsWith("/admin") && role !== "ADMIN") {

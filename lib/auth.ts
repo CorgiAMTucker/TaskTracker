@@ -14,7 +14,7 @@ function getSecretKey() {
 
 export type SessionPayload = {
   sub: string;
-  role: "ADMIN" | "MEMBER";
+  role: "ADMIN" | "MEMBER" | "REQUESTER";
   name: string;
 };
 
@@ -42,7 +42,7 @@ export async function verifySessionToken(
     if (
       typeof payload.sub === "string" &&
       typeof payload.name === "string" &&
-      (payload.role === "ADMIN" || payload.role === "MEMBER")
+      (payload.role === "ADMIN" || payload.role === "MEMBER" || payload.role === "REQUESTER")
     ) {
       return { sub: payload.sub, role: payload.role, name: payload.name };
     }

@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   ADMIN
   MEMBER
+  REQUESTER
 }
 
 enum Priority {
@@ -22,6 +23,17 @@ enum Priority {
 enum TaskSource {
   INTERNAL
   EXTERNAL_FORM
+}
+
+enum RequestKind {
+  BROKER_REQUEST
+  TASK
+}
+
+enum TaskKind {
+  ENDORSEMENT
+  CUSTOMER_QUESTION
+  OTHER
 }
 
 model User {
@@ -38,6 +50,7 @@ model User {
 
   assignedTasks Task[] @relation("AssignedTasks")
   createdTasks  Task[] @relation("CreatedTasks")
+  notes         Note[]
 
   roundRobinMemberships RoundRobinMember[]
 }
@@ -53,9 +66,9 @@ model Board {
 }
 
 model Column {
-  id      String @id @default(cuid())
-  name    String
-  order   Int
+  id    String @id @default(cuid())
+  name  String
+  order Int
 
   boardId String
   board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
@@ -66,12 +79,14 @@ model Column {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
   description String?
-  priority    Priority   @default(MEDIUM)
-  order       Int        @default(0)
-  source      TaskSource @default(INTERNAL)
+  priority    Priority    @default(MEDIUM)
+  order       Int         @default(0)
+  source      TaskSource  @default(INTERNAL)
+  requestKind RequestKind @default(TASK)
+  taskKind    TaskKind?
 
   columnId String
   column   Column @relation(fields: [columnId], references: [id])
@@ -82,9 +97,21 @@ model Task {
   createdById String?
   createdBy   User?   @relation("CreatedTasks", fields: [createdById], references: [id])
 
-  requesterName    String?
-  requesterEmail   String?
-  requesterCompany String?
+  requesterName      String?
+  requesterFirstName String?
+  requesterLastName  String?
+  requesterEmail     String?
+  requesterPhone     String?
+  requesterCompany   String?
+
+  entityFein            String?
+  atlasLink             String?
+  coverageRequested     String?
+  limitsRequested       String?
+  questionnaireFileUrl  String?
+  questionnaireFileName String?
+
+  notes Note[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -93,10 +120,25 @@ model Task {
   @@index([assigneeId])
 }
 
+model Note {
+  id   String @id @default(cuid())
+  body String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
 model RoundRobinMember {
-  id      String  @id @default(cuid())
-  order   Int
-  active  Boolean @default(true)
+  id     String  @id @default(cuid())
+  order  Int
+  active Boolean @default(true)
 
   boardId String
   board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
