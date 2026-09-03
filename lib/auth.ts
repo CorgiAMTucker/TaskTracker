@@ -16,6 +16,7 @@ export type SessionPayload = {
   sub: string;
   role: "ADMIN" | "MEMBER" | "REQUESTER";
   name: string;
+  mustChangePassword: boolean;
 };
 
 export async function hashPassword(password: string) {
@@ -42,9 +43,15 @@ export async function verifySessionToken(
     if (
       typeof payload.sub === "string" &&
       typeof payload.name === "string" &&
+      typeof payload.mustChangePassword === "boolean" &&
       (payload.role === "ADMIN" || payload.role === "MEMBER" || payload.role === "REQUESTER")
     ) {
-      return { sub: payload.sub, role: payload.role, name: payload.name };
+      return {
+        sub: payload.sub,
+        role: payload.role,
+        name: payload.name,
+        mustChangePassword: payload.mustChangePassword,
+      };
     }
     return null;
   } catch {

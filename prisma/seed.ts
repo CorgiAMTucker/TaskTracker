@@ -20,6 +20,7 @@ async function main() {
         email: "tucker@corgi.com",
         passwordHash: await bcrypt.hash(password, 10),
         role: "ADMIN",
+        mustChangePassword: true,
       },
     });
     console.log("\nSeeded admin account:");

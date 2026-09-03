@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       passwordHash: await hashPassword(password),
       role: role ?? "MEMBER",
       managerId: managerId || null,
+      mustChangePassword: true,
     },
     select: { id: true, name: true, email: true, role: true, managerId: true },
   });

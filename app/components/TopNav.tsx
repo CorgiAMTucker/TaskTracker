@@ -41,6 +41,12 @@ export default function TopNav({
       </div>
       <div className="flex items-center gap-3 text-sm text-slate-600">
         <span>{currentUser.name}</span>
+        <Link
+          href="/change-password"
+          className="rounded-md px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-200"
+        >
+          Change password
+        </Link>
         <button
           onClick={handleLogout}
           className="rounded-md px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-200"

@@ -36,7 +36,9 @@ export async function PATCH(
     where: { id },
     data: {
       ...rest,
-      ...(password ? { passwordHash: await hashPassword(password) } : {}),
+      ...(password
+        ? { passwordHash: await hashPassword(password), mustChangePassword: true }
+        : {}),
     },
     select: { id: true, name: true, email: true, role: true, managerId: true },
   });

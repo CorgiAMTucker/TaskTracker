@@ -6,6 +6,7 @@ const SESSION_COOKIE = "session";
 
 const PUBLIC_PATHS = ["/login"];
 const PUBLIC_API_PREFIXES = ["/api/auth/login"];
+const CHANGE_PASSWORD_ALLOWED = ["/change-password", "/api/auth/change-password", "/api/auth/logout"];
 
 function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
@@ -25,10 +26,12 @@ export async function proxy(request: NextRequest) {
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   let role: string | null = null;
+  let mustChangePassword = false;
   if (token) {
     try {
       const { payload } = await jwtVerify(token, getSecretKey());
       role = typeof payload.role === "string" ? payload.role : null;
+      mustChangePassword = payload.mustChangePassword === true;
     } catch {
       role = null;
     }
@@ -43,6 +46,13 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (mustChangePassword && !CHANGE_PASSWORD_ALLOWED.includes(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Password change required" }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL("/change-password", request.url));
   }
 
   if (pathname.startsWith("/admin") && role !== "ADMIN") {

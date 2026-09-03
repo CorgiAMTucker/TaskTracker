@@ -24,12 +24,14 @@ export async function POST(request: Request) {
     sub: user.id,
     role: user.role,
     name: user.name,
+    mustChangePassword: user.mustChangePassword,
   });
 
   const response = NextResponse.json({
     id: user.id,
     name: user.name,
     role: user.role,
+    mustChangePassword: user.mustChangePassword,
   });
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
