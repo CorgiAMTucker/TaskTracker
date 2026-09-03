@@ -32,9 +32,6 @@ export default function TopNav({
           <Link href="/board" className={linkClass("/board")}>
             Board
           </Link>
-          <Link href="/request" className={linkClass("/request")}>
-            New Request
-          </Link>
           {currentUser.role === "ADMIN" && (
             <Link href="/admin" className={linkClass("/admin")}>
               Admin

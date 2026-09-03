@@ -18,6 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Link from "next/link";
 import type { BoardDTO, ColumnDTO, TaskDTO, UserDTO } from "@/lib/types";
 import TopNav from "@/app/components/TopNav";
 import TaskDialog from "./TaskDialog";
@@ -418,6 +419,12 @@ export default function BoardClient({
               + New task
             </button>
           )}
+          <Link
+            href="/request"
+            className="rounded-md border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          >
+            New Request
+          </Link>
         </div>
       </div>
 
