@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import type { BoardDTO } from "@/lib/types";
 
 type RequestKind = "BROKER_REQUEST" | "TASK";
@@ -86,11 +85,17 @@ export default function RequestForm({ mode }: { mode: "public" | "internal" }) {
     setUploadError(null);
     setUploading(true);
     try {
-      const blob = await upload(selected.name, selected, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-      setUploadedFile({ url: blob.url, name: selected.name });
+      const body = new FormData();
+      body.append("file", selected);
+      const res = await fetch("/api/upload", { method: "POST", body });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setUploadError(data.error ?? "Couldn't upload that file. Please try again.");
+        setFile(null);
+        return;
+      }
+      const data = await res.json();
+      setUploadedFile({ url: data.url, name: data.name });
     } catch {
       setUploadError("Couldn't upload that file. Please try again.");
       setFile(null);
