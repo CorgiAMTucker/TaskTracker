@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { BoardDTO } from "@/lib/types";
+import { BROKER_REQUESTS_ENABLED } from "@/lib/featureFlags";
 
 type RequestKind = "BROKER_REQUEST" | "TASK";
 
@@ -22,7 +23,9 @@ const labelClass = "block text-sm font-medium text-slate-700";
 
 export default function RequestForm({ requireAllFields }: { requireAllFields: boolean }) {
   const [boards, setBoards] = useState<BoardDTO[]>([]);
-  const [requestKind, setRequestKind] = useState<RequestKind>("BROKER_REQUEST");
+  const [requestKind, setRequestKind] = useState<RequestKind>(
+    BROKER_REQUESTS_ENABLED ? "BROKER_REQUEST" : "TASK"
+  );
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -173,19 +176,21 @@ export default function RequestForm({ requireAllFields }: { requireAllFields: bo
     >
       <h1 className="text-xl font-semibold text-slate-900">File a request</h1>
 
-      <label className={`mt-6 ${labelClass}`}>
-        Request Type
-        <select
-          value={requestKind}
-          onChange={(e) => setRequestKind(e.target.value as RequestKind)}
-          className={inputClass}
-        >
-          <option value="BROKER_REQUEST">Broker Request</option>
-          <option value="TASK">Task</option>
-        </select>
-      </label>
+      {BROKER_REQUESTS_ENABLED && (
+        <label className={`mt-6 ${labelClass}`}>
+          Request Type
+          <select
+            value={requestKind}
+            onChange={(e) => setRequestKind(e.target.value as RequestKind)}
+            className={inputClass}
+          >
+            <option value="BROKER_REQUEST">Broker Request</option>
+            <option value="TASK">Task</option>
+          </select>
+        </label>
+      )}
 
-      {requestKind === "BROKER_REQUEST" ? (
+      {BROKER_REQUESTS_ENABLED && requestKind === "BROKER_REQUEST" ? (
         <>
           <label className={`mt-4 ${labelClass}`}>
             Company Name

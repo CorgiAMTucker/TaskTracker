@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getNextAssignee } from "@/lib/roundRobin";
+import { BROKER_REQUESTS_ENABLED } from "@/lib/featureFlags";
 
 const BOARD_NAME_BY_KIND: Record<"BROKER_REQUEST" | "TASK", string> = {
   BROKER_REQUEST: "Brokering Requests",
@@ -41,6 +42,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
   const d = parsed.data;
+
+  if (d.requestKind === "BROKER_REQUEST" && !BROKER_REQUESTS_ENABLED) {
+    return NextResponse.json(
+      { error: "Broker Request submissions are temporarily disabled" },
+      { status: 400 }
+    );
+  }
 
   // Basic Users are the closest thing to the old external submitter, so they
   // still face the full required-field list. AMs/Admins filing internally

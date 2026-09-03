@@ -22,6 +22,9 @@ import Link from "next/link";
 import type { BoardDTO, ColumnDTO, TaskDTO, UserDTO } from "@/lib/types";
 import TopNav from "@/app/components/TopNav";
 import TaskDialog from "./TaskDialog";
+import { BROKER_REQUESTS_ENABLED } from "@/lib/featureFlags";
+
+const DEPRECATED_BOARD_NAMES = BROKER_REQUESTS_ENABLED ? [] : ["Brokering Requests"];
 
 type FilterValue = "all" | "mine" | "team" | `user:${string}`;
 
@@ -65,7 +68,10 @@ export default function BoardClient({
   initialBoards: BoardDTO[];
 }) {
   const [boards, setBoards] = useState<BoardDTO[]>(initialBoards);
-  const [activeBoardId, setActiveBoardId] = useState<string>(initialBoards[0]?.id ?? "");
+  const visibleBoards = boards.filter((b) => !DEPRECATED_BOARD_NAMES.includes(b.name));
+  const [activeBoardId, setActiveBoardId] = useState<string>(
+    initialBoards.find((b) => !DEPRECATED_BOARD_NAMES.includes(b.name))?.id ?? ""
+  );
   const [filter, setFilter] = useState<FilterValue>("all");
   const [columns, setColumns] = useState<Record<string, TaskDTO[]>>({});
   const [loading, setLoading] = useState(true);
@@ -341,7 +347,7 @@ export default function BoardClient({
       <TopNav currentUser={currentUser} />
 
       <div className="flex items-center gap-1 border-b border-slate-200 bg-white px-6 pt-3">
-        {boards.map((b) => (
+        {visibleBoards.map((b) => (
           <button
             key={b.id}
             onClick={() => {
