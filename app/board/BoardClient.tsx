@@ -531,6 +531,7 @@ export default function BoardClient({
           onSaved={handleTaskSaved}
           onDeleted={handleTaskDeletedLocally}
           readOnly={isReadOnly}
+          currentUser={currentUser}
         />
       )}
     </div>

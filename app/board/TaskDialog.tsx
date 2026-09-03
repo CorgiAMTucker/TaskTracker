@@ -21,6 +21,7 @@ export default function TaskDialog({
   onSaved,
   onDeleted,
   readOnly,
+  currentUser,
 }: {
   open: boolean;
   task?: TaskDTO;
@@ -32,6 +33,7 @@ export default function TaskDialog({
   onSaved: (task: TaskDTO) => void;
   onDeleted?: (taskId: string) => void;
   readOnly?: boolean;
+  currentUser: { id: string; role: "ADMIN" | "MEMBER" | "REQUESTER" };
 }) {
   const isEdit = !!task;
 
@@ -46,6 +48,7 @@ export default function TaskDialog({
   const [notesLoading, setNotesLoading] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [postingNote, setPostingNote] = useState(false);
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -146,6 +149,19 @@ export default function TaskDialog({
       }
     } finally {
       setPostingNote(false);
+    }
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    if (!window.confirm("Delete this note?")) return;
+    setDeletingNoteId(noteId);
+    try {
+      const res = await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
+      if (res.ok) {
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      }
+    } finally {
+      setDeletingNoteId(null);
     }
   }
 
@@ -339,17 +355,32 @@ export default function TaskDialog({
               <p className="mt-2 text-xs text-slate-400">No notes yet.</p>
             ) : (
               <ul className="mt-2 max-h-48 space-y-2 overflow-y-auto">
-                {notes.map((note) => (
-                  <li key={note.id} className="rounded-md bg-slate-50 px-3 py-2">
-                    <p className="text-xs font-medium text-slate-700">
-                      {note.author.name}
-                      <span className="ml-2 font-normal text-slate-400">
-                        {new Date(note.createdAt).toLocaleString()}
-                      </span>
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{note.body}</p>
-                  </li>
-                ))}
+                {notes.map((note) => {
+                  const canDelete = note.author.id === currentUser.id || currentUser.role === "ADMIN";
+                  return (
+                    <li key={note.id} className="group rounded-md bg-slate-50 px-3 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-medium text-slate-700">
+                          {note.author.name}
+                          <span className="ml-2 font-normal text-slate-400">
+                            {new Date(note.createdAt).toLocaleString()}
+                          </span>
+                        </p>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNote(note.id)}
+                            disabled={deletingNoteId === note.id}
+                            className="hidden text-xs text-slate-400 hover:text-red-500 group-hover:block disabled:opacity-50"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{note.body}</p>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <div className="mt-3 flex gap-2">
