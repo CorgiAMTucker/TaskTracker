@@ -70,7 +70,7 @@ export default function BoardClient({
   const [columns, setColumns] = useState<Record<string, TaskDTO[]>>({});
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<TaskDTO | null>(null);
-  const [dialogTask, setDialogTask] = useState<TaskDTO | "new" | null>(null);
+  const [dialogTask, setDialogTask] = useState<TaskDTO | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [columnError, setColumnError] = useState<string | null>(null);
   const [selectMode, setSelectMode] = useState(false);
@@ -411,17 +411,9 @@ export default function BoardClient({
               {selectMode ? "Done selecting" : "Select"}
             </button>
           )}
-          {!isReadOnly && (
-            <button
-              onClick={() => setDialogTask("new")}
-              className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              + New task
-            </button>
-          )}
           <Link
             href="/request"
-            className="rounded-md border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
           >
             New Request
           </Link>
@@ -526,12 +518,9 @@ export default function BoardClient({
         )}
       </main>
 
-      {activeBoard && (
+      {activeBoard && dialogTask && (
         <TaskDialog
-          open={dialogTask !== null}
-          task={dialogTask === "new" ? undefined : dialogTask ?? undefined}
-          boardId={activeBoardId}
-          defaultColumnId={activeBoard.columns[0]?.id}
+          task={dialogTask}
           onClose={() => setDialogTask(null)}
           users={users}
           columns={activeBoard.columns}
