@@ -785,9 +785,11 @@ function TaskCard({
         {task.source === "EXTERNAL_FORM" && (
           <span
             className="rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-medium text-purple-700"
-            title={`Filed by ${task.requesterName ?? "external requester"}${
-              task.requesterCompany ? ` (${task.requesterCompany})` : ""
-            }`}
+            title={`Filed by ${
+              [task.requesterFirstName, task.requesterLastName].filter(Boolean).join(" ") ||
+              task.requesterName ||
+              "external requester"
+            }${task.requesterCompany ? ` (${task.requesterCompany})` : ""}`}
           >
             External
           </span>

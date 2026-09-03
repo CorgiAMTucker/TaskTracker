@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 const SESSION_COOKIE = "session";
 
 const PUBLIC_PATHS = ["/login", "/submit"];
-const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/requests", "/api/upload"];
+const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/requests", "/api/upload", "/api/boards"];
 
 function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
